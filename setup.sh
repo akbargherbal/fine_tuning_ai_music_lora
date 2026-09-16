@@ -41,6 +41,15 @@ hf_download() {
 python -m pip install -q "huggingface-hub==0.36.2"
 python -m pip install -q "transformers==4.57.6"
 
+# Align torchvision with the already-installed torch. The base image may ship a
+# torchvision built for a newer torch, which makes `import torchvision` raise
+# "operator torchvision::nms does not exist" and in turn breaks transformers'
+# `from transformers import PreTrainedModel`. torch x.Y pairs with torchvision
+# 0.(Y+15), so derive the matching build and install it.
+TORCHVISION_VERSION="$(python -c 'import torch; minor = int(torch.__version__.split("+")[0].split(".")[1]); cuda = (torch.version.cuda or "").replace(".", ""); print(f"0.{minor + 15}.0+cu{cuda}")')"
+echo "Installing matching torchvision==${TORCHVISION_VERSION}..."
+python -m pip install -q --index-url https://download.pytorch.org/whl/cu128 "torchvision==${TORCHVISION_VERSION}"
+
 mkdir -p /content/YuE2-3B/pkg /content/models
 hf_download m-a-p/YuE2-3B yue2_infer-0.1.5-py3-none-any.whl --local-dir /content/YuE2-3B/pkg
 python -m pip install -q --no-deps /content/YuE2-3B/pkg/yue2_infer-0.1.5-py3-none-any.whl

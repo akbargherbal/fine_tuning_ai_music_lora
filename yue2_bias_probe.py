@@ -41,8 +41,30 @@ import sys
 import time
 from pathlib import Path
 
-MODEL = "/content/models/YuE2-3B"
-VAE = "/content/models/YuE2-Vae"
+# Weight locations. The repo's setup.sh installs to /content/models, but on
+# some images the weights already live under ComfyUI's checkpoints dir (or
+# only in the Hugging Face cache). Pick whichever exists; fall back to the HF
+# repo id, which yue2 resolves from cache (or downloads) as a last resort.
+_MODEL_CANDIDATES = [
+    "/content/models/YuE2-3B",
+    "/content/ComfyUI/models/checkpoints/YuE2-3B",
+]
+_VAE_CANDIDATES = [
+    "/content/models/YuE2-Vae",
+    "/content/ComfyUI/models/checkpoints/YuE2-Vae",
+    "/content/ComfyUI/models/vae/YuE2-Vae",
+]
+
+
+def _first_existing_dir(candidates: list[str], fallback: str) -> str:
+    for candidate in candidates:
+        if Path(candidate).is_dir():
+            return candidate
+    return fallback
+
+
+MODEL = _first_existing_dir(_MODEL_CANDIDATES, "m-a-p/YuE2-3B")
+VAE = _first_existing_dir(_VAE_CANDIDATES, "m-a-p/YuE2-Vae")
 
 QUALITY_PRESETS = {
     "standard": {"ode_steps": 32},
